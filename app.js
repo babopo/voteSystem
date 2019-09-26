@@ -1,9 +1,12 @@
-const express = require('express');
+const express = require('express')
 const app = express()
-const sqlite = require('sqlite');
+const sqlite = require('sqlite')
 //promise版的sqlite模块
-const cookieParser = require('cookie-parser');
+const cookieParser = require('cookie-parser')
+const https = require('https')
+const fs = require('fs')
 let port = 80
+let httpsPort = 443
 
 //cookie签名
 let cookieSignature = 'myApp'
@@ -127,4 +130,8 @@ dbPromise.then((data) => {
     app.listen(port, () => {
         console.log(`express listenning on ${port}`)
     })
+    https.createServer({
+        key: fs.readFileSync("/root/.acme.sh/limbotech.top/limbotech.top.key", "utf8"),
+        cer: fs.readFileSync("/root/.acme.sh/limbotech.top/limbotech.top.cer", "utf8")
+    }, app).listen(httpsPort)
 })
