@@ -1,0 +1,9 @@
+//- 登陆登出的跳转页面
+extends layout.pug
+
+block main 
+    .alert.alert-primary(role="alert").
+        #{msg}, redirecting in #[strong 2] s...
+
+block scripts
+    script(src="/static/js/redirect.js")

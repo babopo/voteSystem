@@ -1,0 +1,24 @@
+extends layout.pug
+
+
+block main
+    h1.text-info Shithub
+    //- 发送到/login页
+    form.mx-auto.login(action="/login" method="post")
+        .form-group
+            label(for="username") Account:
+            input.form-control(name='username' id="username" type="text" placeholder="Your username")
+            small.form-text.text-muted admin account for testing: admin
+        .form-group
+            label(for="password") Password:
+            input.form-control(name='password' id="password" type="text" placeholder="Your password")
+            small.form-text.text-muted admin account for testing: admin
+        .btn-group.d-flex
+            button.btn.btn-outline-dark(type="submit" id="login") Login
+            button.btn.btn-outline-dark(type="button" id="register") Register
+        
+block foot
+    #footer Copyright &copy; 2019
+
+block scripts
+    script(src="/static/js/index.js")

@@ -1,0 +1,22 @@
+extends layout.pug
+
+block links
+    link(rel="stylesheet" href="./static/css/register.css")
+
+block main
+    h1.text-info Register as a piece of shit
+    form.mx-auto.register(action="/register" method="POST")
+        .form-group
+            label(for="username") User name:
+            input.form-control(name='username' id="username" type="text" placeholder="Your username")
+            small.form-text.text-muted Username to login
+        .form-group
+            label(for="email") Email:
+            input.form-control(name='email' id="email" type="email" placeholder="Your email")
+            small.form-text.text-muted Email to retrieve your account
+        .form-group
+            label(for="password") Password:
+            input.form-control(name='password' id="password" type="password" placeholder="Your password")
+            small.form-text.text-muted Password to login
+        .btn-group.d-flex
+            button.btn.btn-outline-dark(type="submit" id="register") Register
