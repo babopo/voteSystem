@@ -131,7 +131,7 @@ dbPromise.then((data) => {
         console.log(`express listenning on ${port}`)
     })
     https.createServer({
-        key: fs.readFileSync("/root/.acme.sh/limbotech.top/limbotech.top.key", "utf8"),
-        cer: fs.readFileSync("/root/.acme.sh/limbotech.top/limbotech.top.cer", "utf8")
+        key: fs.readFileSync("/root/.acme.sh/limbotech.top/limbotech.top.key"),
+        cert: fs.readFileSync("/root/.acme.sh/limbotech.top/limbotech.top.cer")
     }, app).listen(httpsPort)
 })
