@@ -3,7 +3,7 @@ const app = express()
 const sqlite = require('sqlite');
 //promise版的sqlite模块
 const cookieParser = require('cookie-parser');
-let port = 8080
+let port = 80
 
 //cookie签名
 let cookieSignature = 'myApp'
