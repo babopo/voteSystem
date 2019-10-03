@@ -1,8 +1,5 @@
 extends layout.pug
 
-block links
-    link(rel="stylesheet" href="./static/css/register.css")
-
 block main
     h1.text-info Register as a piece of shit
     form.mx-auto.register(action="/register" method="POST")
@@ -20,3 +17,7 @@ block main
             small.form-text.text-muted Password to login
         .btn-group.d-flex
             button.btn.btn-outline-dark(type="submit" id="register") Register
+            button.btn.btn-outline-dark(type="button" id="back") Back
+
+block scripts
+    script(src="/static/js/register.js")

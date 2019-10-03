@@ -1,6 +1,5 @@
-const submit = document.getElementById('register')
+const submit = document.getElementById('send')
 const back = document.getElementById('back')
-const username = document.getElementById('username')
 
 back.addEventListener('click', e => {
     location.href = '/'

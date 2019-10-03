@@ -1,14 +1,9 @@
 h1
     text-align center
 
-// 登陆页面表单的宽度
-.login
-    width 300px
-
-
-//注册页的表单宽度
-.register 
-    width 300px
+//表单的宽度
+form 
+    width 50%
 
 #footer 
     text-align center

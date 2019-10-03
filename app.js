@@ -3,6 +3,8 @@ const app = express()
 const sqlite = require('sqlite')
 //promise版的sqlite模块
 const cookieParser = require('cookie-parser')
+const nodemailer= require('nodemailer')
+
 const https = require('https')
 const fs = require('fs')
 let port = 80
@@ -15,6 +17,15 @@ const dbPromise = sqlite.open(__dirname + '/db/vote.sqlite')
 //dbPromise 的value为可调用的db
 let db
 
+//创建邮件发送服务
+const mailer = nodemailer.createTransport({
+    service: "qq",
+    sercure: true,
+    auth: {
+        user: "453565260",
+        pass: "bicmkojwoceabgbh"
+    }
+})
 
 //前置过滤器
 app.use(cookieParser(cookieSignature))
@@ -54,9 +65,9 @@ app.route('/login')
             //更新登陆时间
             await db.run(`UPDATE users SET lastLoginDate = "${Date.now()}", lastloginIP = "${req.ip}" WHERE uid = ${user.uid}`)
             res.cookie('uid', user.uid, { signed: true})
-            res.render('redirect.pug', {title: 'redirecting', msg: "logging in"})
+            res.render('redirect.pug', {title: 'redirecting', msg: "logging in", time: '2'})
         } else {
-            res.render('redirect.pug', {title: 'redirecting', msg: "wrong username or password"})
+            res.render('redirect.pug', {title: 'redirecting', msg: "wrong username or password", time: '2'})
         }
         next()
     })
@@ -73,25 +84,25 @@ app.route('/register')
         //接受注册信息
         let user = await db.get(`SELECT * FROM users WHERE username = "${req.body.username}"`)
         if(user) {
-            res.render('redirect.pug', {title: 'redirecting', msg: 'username already in use'})
+            res.render('redirect.pug', {title: 'redirecting', msg: 'username already in use', time: '2'})
         } else {
             //用户名可以注册，注册成功设置cookie并跳转
             await db.run(`INSERT INTO users VALUES(null,"${req.body.username}","${req.body.password}","${req.body.email}",null,"${req.ip}","${Date.now()}","${req.body.avatarPath}")`)
             user = await db.get(`SELECT * FROM users WHERE username = "${req.body.username}"`)
             res.cookie('uid', user.uid, {signed: true})
-            res.render('redirect', {title: 'redirecting', msg: "registration success"})
+            res.render('redirect', {title: 'redirecting', msg: "registration success", time: "2"})
         }
         next()
     })
-
-//登陆成功主页
-app.get('/homepage/:username', async (req, res, next) => {
+    
+    //登陆成功主页
+    app.get('/homepage/:username', async (req, res, next) => {
     const user = await db.get(`SELECT * FROM users WHERE username = "${req.params.username}" AND uid = "${req.signedCookies.uid}"`)
     if(user) {
         res.render('homepage', {title: 'Homepage', username: user.username, avatarPath: __dirname + '/public/avatars/' + user.avatarPath})
     } else {
         res.clearCookie('uid')
-        res.render('redirect', {title: 'redirecting', msg: "can't find user"})
+        res.render('redirect', {title: 'redirecting', msg: "can't find user", time: "2"})
     }
     next()
 })
@@ -100,10 +111,61 @@ app.get('/homepage/:username', async (req, res, next) => {
 //登出
 app.get('/logout', (req, res, next) => {
     res.clearCookie('uid')
-    res.render('redirect.pug', {title: 'redirecting', msg: "logging out"})
+    res.render('redirect.pug', {title: 'redirecting', msg: "logging out", time: '2'})
     next()
 })
 
+
+//忘记密码
+app.get('/forget', (req, res, next) => {
+    res.render('forget.pug', {title: 'Forget'})
+    next()
+})
+app.post('/forget', async (req, res, next) => {
+    const user = await db.get(`SELECT * FROM users WHERE ${req.body.method} = "${req.body.val}"`)
+    if(user) {
+        const token = Math.random().toString().slice(2)
+        const tempURL = 'http://47.97.208.138/verification/' + token
+        mailer.sendMail({
+            from: '"Shithub" <453565260@qq.com>',
+            to: user.email,
+            subject: 'Please verify your account',
+            text: `
+            Username: ${user.username}
+            New Password: ${req.body.password}
+
+            click: ${tempURL}
+            `
+        }, (err, info) => {
+            if (err) {
+                //发送失败则在跳转页显示错误信息
+                res.render('redirect.pug', {title: 'redirecting', msg: "error" + err.responseCode, time: '2'})
+            } else {
+                db.run(`INSERT INTO passwordChanging VALUES(${user.uid}, "${req.body.password}", ${token})`)
+                setTimeout(() => {
+                    //20f分钟后使连接失效
+                    db.run(`DELETE FROM passwordChanging WHERE token = ${token}`)
+                }, 1000 * 60 * 20)
+                res.render('redirect.pug', {title: 'redirecting', msg: "Please check your email in 20 minutes", time: '3'})
+            }
+        })
+    } else {
+        res.render('redirect.pug', {title: 'redirecting', msg: "Wrong username or email", time: '3'})
+    }
+})
+
+app.get('/verification/:token', async (req, res, next) => {
+    //验证token是否存在
+    const Sent = await db.get(`SELECT * FROM passwordChanging WHERE token = ${req.params.token}`)
+    if(Sent) {
+        //连接有效则将临时数据库中的新密码更新到users
+        await db.run(`UPDATE users SET password = "${Sent.password}" WHERE uid = ${Sent.uid}`)
+        db.run(`DELETE FROM passwordChanging WHERE token = ${req.params.token}`)
+        res.render('redirect.pug', {title: 'redirecting', msg: "Password updated successfully", time: '2'})
+    } else {
+        res.render('redirect.pug', {title: 'redirecting', msg: "Link expried", time: '5'})
+    }
+})
 
 
 //访问静态文件

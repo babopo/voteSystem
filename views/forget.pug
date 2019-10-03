@@ -1,0 +1,21 @@
+extends layout.pug
+
+block main
+    h1.text-info Forget password
+    form.mx-auto.login(action="/forget" method="post")
+        .form-group
+            .input-group.mb-3
+                select.custom-select(name="method")
+                    option(selected value="username") username
+                    option(value="email") email
+                input.form-control(type="text" name="val")
+            small.form-text.text-muted Choose username or email to retrieve your account
+        .form-group
+            input.form-control(type="password" name="password" placeholder="New password")
+        .btn-group.d-flex
+            button.btn.btn-outline-dark(type="submit" id="send") Send Email
+            button.btn.btn-outline-dark(type="button" id="back") Back 
+
+
+block scripts
+    script(src="/static/js/forget.js")
