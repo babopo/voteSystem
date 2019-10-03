@@ -1,11 +1,11 @@
 extends layout.pug
 
 block main
-    h1.text-info Register as a piece of shit
-    form.mx-auto.register(action="/register" method="POST")
+    h1.text-info Register to become a piece of shit !
+    form.mx-auto.register(action="/register" method="POST" enctype="multipart/form-data")
         .form-group
             label(for="username") User name:
-            input.form-control(name='username' id="username" type="text" placeholder="Your username")
+            input.form-control(name='username' id="username" type="text" placeholder="Your username" required)
             small.form-text.text-muted Username to login
         .form-group
             label(for="email") Email:
@@ -15,6 +15,14 @@ block main
             label(for="password") Password:
             input.form-control(name='password' id="password" type="password" placeholder="Your password")
             small.form-text.text-muted Password to login
+        .form-group
+            label(for="avatarFile") Avatar:
+            .input-group
+                .custom-file
+                    input.custom-file-input(type="file" id="avatarFile" name="avatar")
+                    label.custom-file-label(for="avatarFile") Choose a pic
+            small.form-text.text-muted It would be resized to 50x50 automatically
+        
         .btn-group.d-flex
             button.btn.btn-outline-dark(type="submit" id="register") Register
             button.btn.btn-outline-dark(type="button" id="back") Back

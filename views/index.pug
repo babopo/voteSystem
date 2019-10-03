@@ -7,11 +7,11 @@ block main
     form.mx-auto.login(action="/login" method="post")
         .form-group
             label(for="username") Account:
-            input.form-control(name='username' id="username" type="text" placeholder="Your username")
+            input.form-control(name='username' id="username" type="text" placeholder="Your username" required)
             small.form-text.text-muted admin account for testing: admin
         .form-group
             label(for="password") Password:
-            input.form-control(name='password' id="password" type="text" placeholder="Your password")
+            input.form-control(name='password' id="password" type="password" placeholder="Your password")
             small.form-text.text-muted admin account for testing: admin
         .btn-group.d-flex
             button.btn.btn-outline-dark(type="submit" id="login") Login

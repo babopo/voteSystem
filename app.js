@@ -4,14 +4,17 @@ const sqlite = require('sqlite')
 //promise版的sqlite模块
 const cookieParser = require('cookie-parser')
 const nodemailer= require('nodemailer')
+const multer = require('multer')
+const sharp = require('sharp')
 
 const https = require('https')
 const fs = require('fs')
-let port = 80
-let httpsPort = 443
+const fsp = fs.promises
+const port = 80
+const httpsPort = 443
 
 //cookie签名
-let cookieSignature = 'myApp'
+const cookieSignature = 'myApp'
 
 const dbPromise = sqlite.open(__dirname + '/db/vote.sqlite')
 //dbPromise 的value为可调用的db
@@ -27,6 +30,11 @@ const mailer = nodemailer.createTransport({
     }
 })
 
+//处理头像上传
+const uploader = multer({
+    dest: __dirname + '/public/avatars/'
+})
+
 //前置过滤器
 app.use(cookieParser(cookieSignature))
 //解析请求体
@@ -39,13 +47,14 @@ app.set('view engine', 'pug')
 //首页
 app.get('/', async (req, res, next) => {
     //打开首页
-    let cookie = req.signedCookies
+    const cookie = req.signedCookies
     if(cookie.uid) {
-        let user =  await db.get(`SELECT * FROM users WHERE uid = ${cookie.uid}`)
+        const user =  await db.get(`SELECT * FROM users WHERE uid = ${cookie.uid}`)
         if(user) {
             res.redirect('/homepage/' + user.username)
         } else {
-            res.send('fake cookie')
+            res.clearCookie('uid')
+            res.render('redirect.pug', {title: 'redirecting', msg: "fake cookie", time: '2'})
         }
     } else {
         //没有cookie则返回输入账号页面
@@ -57,8 +66,6 @@ app.get('/', async (req, res, next) => {
 //登陆页
 app.route('/login')
     .post(async (req, res, next) => {
-        // const data = await db.all(`select * from users`)
-
         const user = await db.get(`SELECT * FROM users WHERE username = "${req.body.username}" AND password = "${req.body.password}"`)
         //查不到返回undefined
         if(user) {
@@ -80,29 +87,43 @@ app.route('/register')
         res.render('register.pug', {title: "Rigister"})
         next()
     })
-    .post(async (req, res, next) => {
-        //接受注册信息
+    .post(uploader.single('avatar'), async (req, res, next) => {
+        // 接受注册信息
+        const filePath = __dirname + '/public/avatars/' + req.file.filename
         let user = await db.get(`SELECT * FROM users WHERE username = "${req.body.username}"`)
         if(user) {
             res.render('redirect.pug', {title: 'redirecting', msg: 'username already in use', time: '2'})
+            fs.unlink(filePath)
+            //删除上传的文件
         } else {
             //用户名可以注册，注册成功设置cookie并跳转
-            await db.run(`INSERT INTO users VALUES(null,"${req.body.username}","${req.body.password}","${req.body.email}",null,"${req.ip}","${Date.now()}","${req.body.avatarPath}")`)
+            if (/image/.test(req.file.mimetype)) {
+                // 判断上传的是否是图片
+                imgBuffer = await fsp.readFile(req.file.path)
+                await sharp(imgBuffer).resize(50, 50).toFile(req.file.path)
+                //将图片统一大小后重新保存
+            } else {
+                //不是图片直接删掉
+                fs.unlink(filePath)
+            }
+            await db.run(`INSERT INTO users VALUES(null,"${req.body.username}","${req.body.password}","${req.body.email}",null,"${req.ip}","${Date.now()}","${req.file.filename}")`)
             user = await db.get(`SELECT * FROM users WHERE username = "${req.body.username}"`)
             res.cookie('uid', user.uid, {signed: true})
             res.render('redirect', {title: 'redirecting', msg: "registration success", time: "2"})
         }
         next()
     })
-    
-    //登陆成功主页
-    app.get('/homepage/:username', async (req, res, next) => {
+
+
+//登陆成功主页
+app.get('/homepage/:username', async (req, res, next) => {
+    //同时检测用户名和cookie防止直接输入url打开
     const user = await db.get(`SELECT * FROM users WHERE username = "${req.params.username}" AND uid = "${req.signedCookies.uid}"`)
     if(user) {
-        res.render('homepage', {title: 'Homepage', username: user.username, avatarPath: __dirname + '/public/avatars/' + user.avatarPath})
+        res.render('homepage', {title: 'Homepage', username: user.username, avatarPath: '/public/avatars/' + user.avatarPath})
     } else {
         res.clearCookie('uid')
-        res.render('redirect', {title: 'redirecting', msg: "can't find user", time: "2"})
+        res.render('redirect', {title: 'redirecting', msg: "can't find user, plese login again", time: "2"})
     }
     next()
 })
@@ -143,14 +164,14 @@ app.post('/forget', async (req, res, next) => {
             } else {
                 db.run(`INSERT INTO passwordChanging VALUES(${user.uid}, "${req.body.password}", ${token})`)
                 setTimeout(() => {
-                    //20f分钟后使连接失效
+                    //20分钟后使连接失效
                     db.run(`DELETE FROM passwordChanging WHERE token = ${token}`)
                 }, 1000 * 60 * 20)
-                res.render('redirect.pug', {title: 'redirecting', msg: "Please check your email in 20 minutes", time: '3'})
+                res.render('redirect.pug', {title: 'redirecting', msg: "please check your email in 20 minutes", time: '3'})
             }
         })
     } else {
-        res.render('redirect.pug', {title: 'redirecting', msg: "Wrong username or email", time: '3'})
+        res.render('redirect.pug', {title: 'redirecting', msg: "wrong username or email", time: '3'})
     }
 })
 
@@ -161,9 +182,9 @@ app.get('/verification/:token', async (req, res, next) => {
         //连接有效则将临时数据库中的新密码更新到users
         await db.run(`UPDATE users SET password = "${Sent.password}" WHERE uid = ${Sent.uid}`)
         db.run(`DELETE FROM passwordChanging WHERE token = ${req.params.token}`)
-        res.render('redirect.pug', {title: 'redirecting', msg: "Password updated successfully", time: '2'})
+        res.render('redirect.pug', {title: 'redirecting', msg: "password updated successfully", time: '2'})
     } else {
-        res.render('redirect.pug', {title: 'redirecting', msg: "Link expried", time: '5'})
+        res.render('redirect.pug', {title: 'redirecting', msg: "link expried", time: '5'})
     }
 })
 
