@@ -6,7 +6,8 @@ const chatBox = document.querySelector("#chatBox")
 const title = document.querySelector(".title")
 let chatMessage
 
-const username = window.location.pathname.replace(/\/homepage\//, '')
+const username = window.decodeURIComponent(window.location.pathname.replace(/\/homepage\//, ''))
+//从path中获取的，需要转码
 
 socket.on('history', msg => {
     chatMessage = msg || []
@@ -66,7 +67,7 @@ function updateBox(chatMsg) {
     const user = document.createElement('b')
     //展示用户名和发言时间
     user.className = 'mt-0 mb-1 userInfo'
-    user.textContent = (chatMsg.username === username ? 'You' : chatMsg.username) + ' ' + (new Date(+chatMsg.time).toLocaleString())
+    user.textContent = (chatMsg.username === username ? `You(${username})` : chatMsg.username) + ' ' + (new Date(+chatMsg.time).toLocaleString())
     div.append(user)
     //用文本结点加入，还能防一下xss
     div.append(document.createTextNode(chatMsg.message))

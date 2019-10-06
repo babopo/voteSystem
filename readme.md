@@ -1,4 +1,4 @@
-A simple online chatroom
+A simple online real time chatroom
 
 demo: [shithub](https://47.97.208.138/)
 
@@ -8,8 +8,9 @@ demo: [shithub](https://47.97.208.138/)
 
 features:
 
-- [ ] login
-- [ ] register
-- [ ] uploading avatar
-- [ ] using cookie & sessionID authentication
-- [ ] real time chating using socket.io
+- [x] login
+- [x] register
+- [x] uploading avatar
+- [x] using cookie & sessionID authentication
+- [x] real time chating using socket.io
+- [ ] 404 pages
