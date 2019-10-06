@@ -1,11 +1,26 @@
 extends layout.pug
 
+block links
+    link(rel="stylesheet" href="/static/css/homepage.css")
+
 block head
-    .media.profile
+    .media.mb-3.profile
         img.align-self-center.mx-3(src=avatarPath)
         .media-body
-            h5.mt-0 Hello #{username}
-            a.btn.btn-outline-dark(href="/logout") Logout
+            b.mt-0 Hello #{username}
+            a.ml-3.btn.btn-outline-dark(href="/logout") Logout
+            div Welcome to chatting room
 
 block main
+    h5.title.mb-1
+    ul.list-unstyled.mx-auto(id="chatBox")
+block foot
+    form.mx-auto.typingArea
+        .form-group
+            label(for="enteringMessage") Write down your message
+            textarea.form-control.mb-3(id="enteringMessage" rows="3" placeholder="Type here...")
+            button.btn.btn-outline-dark(type="button" id="sendMessage") Send
+block scripts
+    script(src="/socket.io/socket.io.js")
+    script(src="/static/js/homepage.js")
     

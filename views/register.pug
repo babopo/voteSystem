@@ -4,7 +4,7 @@ block main
     h1.text-info Register to become a piece of shit !
     form.mx-auto.register(action="/register" method="POST" enctype="multipart/form-data")
         .form-group
-            label(for="username") User name:
+            label(for="username") Username:
             input.form-control(name='username' id="username" type="text" placeholder="Your username" required)
             small.form-text.text-muted Username to login
         .form-group
@@ -19,7 +19,7 @@ block main
             label(for="avatarFile") Avatar:
             .input-group
                 .custom-file
-                    input.custom-file-input(type="file" id="avatarFile" name="avatar")
+                    input.custom-file-input(type="file" id="avatarFile" name="avatar" required)
                     label.custom-file-label(for="avatarFile") Choose a pic
             small.form-text.text-muted It would be resized to 50x50 automatically
         

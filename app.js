@@ -7,11 +7,46 @@ const nodemailer= require('nodemailer')
 const multer = require('multer')
 const sharp = require('sharp')
 
+const httpServer = require('http').createServer(app)
 const https = require('https')
+const url = require('url')
 const fs = require('fs')
 const fsp = fs.promises
 const port = 80
 const httpsPort = 443
+
+// 记录有多少人正在聊天室中
+let loginUsers = 0
+
+//websocket server
+const io = require('socket.io')(httpServer)
+//只在homepage页请求了连接，而homepage页url的最后一个/之后为username
+io.on('connection', async socket => {
+    //建立连接时触发
+    loginUsers++
+    const username = url.parse(socket.request.headers.referer).path.replace(/\/homepage\//, '')
+    const user = await db.get(`SELECT * FROM users WHERE username = "${username}"`)
+    const history = await db.all(`SELECT username, time, message, avatarPath FROM chatMessage JOIN users USING (uid)`)
+    //通知其他人有人连接
+    socket.broadcast.emit('userConnected', username + ' connected')
+    io.emit('loginUsers', loginUsers)
+    //历史记录只发给建立连接的客户端，是一个json数组
+    socket.emit("history", history)
+
+    socket.on('msg', async msg => {
+        //当这个连接有信息发送过来时触发，给所有连接中的客户端发送信息
+        const time = Date.now()
+        await db.run(`INSERT INTO chatMessage VALUES("${user.uid}", "${msg}", "${time}")`)
+        const newMessage = await db.get(`SELECT username, time, message, avatarPath FROM users JOIN chatMessage USING (uid) WHERE time = "${time}" AND username = "${username}"`)
+        io.emit('msg', newMessage)
+        //需要给所有人发送当前发言人的头像，名称，时间和内容   
+    })
+    socket.on('disconnect', async () => {
+        //通知所有人有人离开
+        io.emit('loginUsers', --loginUsers)
+        socket.broadcast.emit('userLeave', username + ' disconnected')
+    })
+})
 
 //cookie签名
 const cookieSignature = 'myApp'
@@ -156,6 +191,7 @@ app.post('/forget', async (req, res, next) => {
             New Password: ${req.body.password}
 
             click: ${tempURL}
+            This link would be expried in 20 minutes! 
             `
         }, (err, info) => {
             if (err) {
@@ -210,7 +246,7 @@ app.use('/public', express.static(__dirname + '/public'))
 dbPromise.then((data) => {
     //数据库加载完成后再开始监听端口
     db = data
-    app.listen(port, () => {
+    httpServer.listen(port, () => {
         console.log(`express listenning on ${port}`)
     })
     https.createServer({
