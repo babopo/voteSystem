@@ -51,7 +51,7 @@ io.on('connection', async socket => {
 //cookie签名
 const cookieSignature = 'myApp'
 
-const dbPromise = sqlite.open(__dirname + '/db/vote.sqlite')
+const dbPromise = sqlite.open(__dirname + '/db/chattingRoom.sqlite')
 //dbPromise 的value为可调用的db
 let db
 
