@@ -24,7 +24,8 @@ const io = require('socket.io')(httpServer)
 io.on('connection', async socket => {
     //建立连接时触发
     loginUsers++
-    const username = url.parse(socket.request.headers.referer).path.replace(/\/homepage\//, '')
+    const username = decodeURIComponent(url.parse(socket.request.headers.referer).path.replace(/\/homepage\//, ''))
+    //从url中获取的用户名记得转码
     const user = await db.get(`SELECT * FROM users WHERE username = "${username}"`)
     const history = await db.all(`SELECT username, time, message, avatarPath FROM chatMessage JOIN users USING (uid)`)
     //通知其他人有人连接
