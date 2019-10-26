@@ -8,7 +8,10 @@ const multer = require('multer')
 const sharp = require('sharp')
 
 const httpServer = require('http').createServer(app)
-const https = require('https')
+const httpsServer = require('https').createServer(({
+    key: fs.readFileSync("/root/.acme.sh/limbotech.top/limbotech.top.key"),
+    cert: fs.readFileSync("/root/.acme.sh/limbotech.top/limbotech.top.cer")
+}, app))
 const url = require('url')
 const fs = require('fs')
 const fsp = fs.promises
@@ -18,7 +21,7 @@ const httpsPort = 443
 // 记录有多少人正在聊天室中
 let loginUsers = 0
 
-//websocket server
+//websocket http server
 const io = require('socket.io')(httpServer)
 //只在homepage页请求了连接，而homepage页url的最后一个/之后为username
 io.on('connection', async socket => {
@@ -45,6 +48,36 @@ io.on('connection', async socket => {
     socket.on('disconnect', async () => {
         //通知所有人有人离开
         io.emit('loginUsers', --loginUsers)
+        socket.broadcast.emit('userLeave', username + ' disconnected')
+    })
+})
+//websocket https server
+const ios = require('socket.io')(httpsServer)
+//只在homepage页请求了连接，而homepage页url的最后一个/之后为username
+ios.on('connection', async socket => {
+    //建立连接时触发
+    loginUsers++
+    const username = decodeURIComponent(url.parse(socket.request.headers.referer).path.replace(/\/homepage\//, ''))
+    //从url中获取的用户名记得转码
+    const user = await db.get(`SELECT * FROM users WHERE username = "${username}"`)
+    const history = await db.all(`SELECT username, time, message, avatarPath FROM chatMessage JOIN users USING (uid)`)
+    //通知其他人有人连接
+    socket.broadcast.emit('userConnected', username + ' connected')
+    ios.emit('loginUsers', loginUsers)
+    //历史记录只发给建立连接的客户端，是一个json数组
+    socket.emit("history", history)
+
+    socket.on('msg', async msg => {
+        //当这个连接有信息发送过来时触发，给所有连接中的客户端发送信息
+        const time = Date.now()
+        await db.run(`INSERT INTO chatMessage VALUES("${user.uid}", "${msg}", "${time}")`)
+        const newMessage = await db.get(`SELECT username, time, message, avatarPath FROM users JOIN chatMessage USING (uid) WHERE time = "${time}" AND username = "${username}"`)
+        ios.emit('msg', newMessage)
+        //需要给所有人发送当前发言人的头像，名称，时间和内容   
+    })
+    socket.on('disconnect', async () => {
+        //通知所有人有人离开
+        ios.emit('loginUsers', --loginUsers)
         socket.broadcast.emit('userLeave', username + ' disconnected')
     })
 })
@@ -250,8 +283,5 @@ dbPromise.then((data) => {
     httpServer.listen(port, () => {
         console.log(`express listenning on ${port}`)
     })
-    https.createServer({
-        key: fs.readFileSync("/root/.acme.sh/limbotech.top/limbotech.top.key"),
-        cert: fs.readFileSync("/root/.acme.sh/limbotech.top/limbotech.top.cer")
-    }, app).listen(httpsPort)
+    httpsServer.listen(httpsPort)
 })
