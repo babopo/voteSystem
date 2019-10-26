@@ -6,6 +6,8 @@ const cookieParser = require('cookie-parser')
 const nodemailer= require('nodemailer')
 const multer = require('multer')
 const sharp = require('sharp')
+const fs = require('fs')
+const fsp = fs.promises
 
 const httpServer = require('http').createServer(app)
 const httpsServer = require('https').createServer(({
@@ -13,8 +15,6 @@ const httpsServer = require('https').createServer(({
     cert: fs.readFileSync("/root/.acme.sh/limbotech.top/limbotech.top.cer")
 }, app))
 const url = require('url')
-const fs = require('fs')
-const fsp = fs.promises
 const port = 80
 const httpsPort = 443
 
