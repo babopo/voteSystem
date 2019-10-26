@@ -21,8 +21,9 @@ const httpsPort = 443
 // 记录有多少人正在聊天室中
 let loginUsers = 0
 
+const socketIO = require('socket.io')
 //websocket http server
-const io = require('socket.io')(httpServer)
+const io = socketIO(httpServer)
 //只在homepage页请求了连接，而homepage页url的最后一个/之后为username
 io.on('connection', async socket => {
     //建立连接时触发
@@ -52,10 +53,11 @@ io.on('connection', async socket => {
     })
 })
 //websocket https server
-const ios = require('socket.io')(httpsServer)
+const ios = socketIO(httpsServer)
 //只在homepage页请求了连接，而homepage页url的最后一个/之后为username
 ios.on('connection', async socket => {
     //建立连接时触发
+    console.log('connected')
     loginUsers++
     const username = decodeURIComponent(url.parse(socket.request.headers.referer).path.replace(/\/homepage\//, ''))
     //从url中获取的用户名记得转码
