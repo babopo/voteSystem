@@ -16,8 +16,8 @@ const options = {
 }
 const httpsServer = require('https').createServer(options, app)
 const url = require('url')
-const port = 80
-const httpsPort = 443
+const port = 7000
+const httpsPort = 7001
 
 // 记录有多少人正在聊天室中
 let loginUsers = 0
