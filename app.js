@@ -130,7 +130,7 @@ app.get('/', async (req, res, next) => {
         }
     } else {
         //没有cookie则返回输入账号页面
-        res.render('index.pug', {title: 'Shithub'})
+        res.render('index.pug', {title: 'Chat Room'})
     }
     next()
 })
@@ -220,7 +220,7 @@ app.post('/forget', async (req, res, next) => {
         const token = Math.random().toString().slice(2)
         const tempURL = 'http://47.97.208.138/verification/' + token
         mailer.sendMail({
-            from: '"Shithub" <453565260@qq.com>',
+            from: '"Chat Room" <453565260@qq.com>',
             to: user.email,
             subject: 'Please verify your account',
             text: `
